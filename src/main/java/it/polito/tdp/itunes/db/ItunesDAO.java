@@ -7,6 +7,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 import it.polito.tdp.itunes.model.Album;
 import it.polito.tdp.itunes.model.Artist;
 import it.polito.tdp.itunes.model.Genre;
@@ -139,6 +141,32 @@ public class ItunesDAO {
 		return result;
 	}
 	
+	
+	public List<Album> getAllVertices(Integer n){
+		int millisec = (int) TimeUnit.SECONDS.toMillis(n);
+		final String sql = "SELECT DISTINCT a.`AlbumId`, a.`Title`, SUM(t.`Milliseconds`) as duratatot "
+				+ "FROM album a, track t "
+				+ "WHERE a.`AlbumId`=t.`AlbumId` "
+				+ "GROUP BY a.`AlbumId` "
+				+ "HAVING SUM(t.`Milliseconds`)>?";
+		List<Album> result = new LinkedList<>();
+		
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, millisec);
+			ResultSet res = st.executeQuery();
+
+			while (res.next()) {
+				result.add(new Album(res.getInt("AlbumId"), res.getString("Title"), (int)TimeUnit.MILLISECONDS.toSeconds(res.getInt("duratatot"))));
+			}
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw new RuntimeException("SQL Error");
+		}
+		return result;
+	}
 	
 	
 }
